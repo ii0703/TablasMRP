@@ -24,9 +24,9 @@ class Lugar(Model):
     codigo: Mapped[str] = mapped_column(String(6), unique=True, index=True)
     nombre: Mapped[str] = mapped_column(String(100))
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
-    locales: Mapped[list['Local']] = relationship(back_populates='lugar')
-    clientes: Mapped[list['Local']] = relationship(back_populates='lugar')
-    proveedores: Mapped[list['Local']] = relationship(back_populates='lugar')
+    bodegas: Mapped[list['Bodega']] = relationship(back_populates='lugar')
+    clientes: Mapped[list['Cliente']] = relationship(back_populates='lugar')
+    proveedores: Mapped[list['Proveedor']] = relationship(back_populates='lugar')
 
     def __repr__(self):
         return f'<Lugar: "{self.codigo} - {self.nombre}">'
@@ -40,7 +40,7 @@ class Bodega(Model):
     nombre: Mapped[str] = mapped_column(String(100))
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
     lugar_id: Mapped[int] = mapped_column(Integer, ForeignKey('lugares.id'))
-    lugar: Mapped['Lugar'] = relationship(back_populates='locales')
+    lugar: Mapped['Lugar'] = relationship(back_populates='bodegas')
 
     def __repr__(self):
         return f'<Bodega: "{self.codigo} - {self.nombre}">'
@@ -63,7 +63,7 @@ class Cliente(Model):
         return f'<Cliente: "{self.identificacion} - {self.nombre}">'
 
 
-class Proveedores(Model):
+class Proveedor(Model):
     __tablename__ = 'proveedores'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -102,7 +102,6 @@ class Unidad(Model):
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
     tipo_unidad_id: Mapped[int] = mapped_column(Integer, ForeignKey('tipos_unidades.id'))
     tipo_unidad: Mapped['TipoUnidad'] = relationship(back_populates='unidades')
-    productos: Mapped[list['Unidad']] = relationship(back_populates='unidad')
 
     def __repr__(self):
         return f'<Unidad: "{self.simbolo} - {self.nombre}">'
@@ -130,7 +129,7 @@ class Producto(Model):
     categoria_producto_id: Mapped[int] = mapped_column(Integer, ForeignKey('categorias_productos.id'))
     categoria_producto: Mapped['CategoriaProducto'] = relationship(back_populates='productos')
     unidad_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidades.id'))
-    unidad: Mapped['Unidad'] = relationship(back_populates='productos')
+    unidad: Mapped['Unidad'] = relationship()
     cantidad_total: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_disponible: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_reservado: Mapped[float] = mapped_column(Double, default=0.0)
@@ -140,9 +139,10 @@ class Producto(Model):
     utilildad_es_porcentaje: Mapped[bool] = mapped_column(Boolean, default=True)
     porcentaje_utilidad: Mapped[float] = mapped_column(Double, default=0.0)
     monto_utilidad: Mapped[float] = mapped_column(Double, default=0.0)
-    fecha_registro: Mapped[date] = mapped_column(Date, server_default=func.now())
+    fecha_registro: Mapped[date] = mapped_column(Date, default=datetime.now())
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
     lotes: Mapped[list['ProductoLote']] = relationship(back_populates='producto')
+
 
     def __repr__(self):
         return f'<Producto: "{self.simbolo} - {self.nombre}">'
@@ -157,7 +157,7 @@ class ProductoLote(Model):
     producto_id: Mapped[int] = mapped_column(Integer, ForeignKey('productos.id'))
     producto: Mapped['Producto'] = relationship(back_populates='lotes')
     unidad_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidades.id'))
-    unidad: Mapped['Unidad'] = relationship(back_populates='productos')
+    unidad: Mapped['Unidad'] = relationship()
     cantidad_total: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_disponible: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_reservado: Mapped[float] = mapped_column(Double, default=0.0)
@@ -169,7 +169,7 @@ class ProductoLote(Model):
     monto_utilidad: Mapped[float] = mapped_column(Double, default=0.0)
     fecha_registro: Mapped[date] = mapped_column(Date, server_default=func.now())
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
-    fecha_vencimiento: Mapped[Optional[date]] = mapped_column(Date)
+    fecha_vencimiento: Mapped[Optional[datetime]] = mapped_column(DateTime)
     __table_args__ = (
         Index("idx_producto_lote_bp", bodega_id, producto_id, unique=False),
         # UniqueConstraint(bodega_id, producto_id, name='uq_producto_lote_bp'),
@@ -214,17 +214,13 @@ class MateriaPrima(Model):
     categoria_materia_prima_id: Mapped[int] = mapped_column(Integer, ForeignKey('categorias_materias_primas.id'))
     categoria_materia_prima: Mapped['CategoriaMateriaPrima'] = relationship(back_populates='materias')
     unidad_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidades.id'))
-    unidad: Mapped['Unidad'] = relationship(back_populates='productos')
+    unidad: Mapped['Unidad'] = relationship()
     cantidad_total: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_disponible: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_reservado: Mapped[float] = mapped_column(Double, default=0.0)
     costo: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     porcentaje_impuesto: Mapped[float] = mapped_column(Double, default=0.0)
-    redondeo: Mapped[float] = mapped_column(Double, default=0.0)
-    utilildad_es_porcentaje: Mapped[bool] = mapped_column(Boolean, default=True)
-    porcentaje_utilidad: Mapped[float] = mapped_column(Double, default=0.0)
-    monto_utilidad: Mapped[float] = mapped_column(Double, default=0.0)
-    fecha_registro: Mapped[date] = mapped_column(Date, server_default=func.now())
+    fecha_registro: Mapped[date] = mapped_column(Date, default=datetime.now())
     esta_activo: Mapped[bool] = mapped_column(Boolean, default=True)
     lotes: Mapped[list['MateriaPrimaLote']] = relationship(back_populates='materia_prima')
 
@@ -241,7 +237,7 @@ class MateriaPrimaLote(Model):
     materia_prima_id: Mapped[int] = mapped_column(Integer, ForeignKey('materias_primas.id'))
     materia_prima: Mapped['MateriaPrima'] = relationship(back_populates='lotes')
     unidad_id: Mapped[int] = mapped_column(Integer, ForeignKey('unidades.id'))
-    unidad: Mapped['Unidad'] = relationship(back_populates='productos')
+    unidad: Mapped['Unidad'] = relationship()
     cantidad_total: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_disponible: Mapped[float] = mapped_column(Double, default=0.0)
     cantidad_reservado: Mapped[float] = mapped_column(Double, default=0.0)
@@ -309,7 +305,7 @@ class ListaMaterialesComponentes(Model):
     lista_materiales_id: Mapped[int] = mapped_column(Integer, ForeignKey('listas_materiales.id'))
     lista_materiales: Mapped['ListaMateriales'] = relationship()
     componente_id: Mapped[int] = mapped_column(Integer, ForeignKey('productos.id'))
-    componente: Mapped['Producto'] = relationship(back_populates='componentes')
+    componente: Mapped['Producto'] = relationship()
     cantidad: Mapped[float] = mapped_column(Double, default=0.0)
     costo_unitario: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
     costo_total: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
@@ -328,7 +324,7 @@ class ListaMaterialesMateriasPrimas(Model):
     lista_materiales_id: Mapped[int] = mapped_column(Integer, ForeignKey('listas_materiales.id'))
     lista_materiales: Mapped['ListaMateriales'] = relationship()
     materia_prima_id: Mapped[int] = mapped_column(Integer, ForeignKey('materias_primas.id'))
-    materia_prima: Mapped['MateriaPrima'] = relationship(back_populates='materias_primas')
+    materia_prima: Mapped['MateriaPrima'] = relationship()
     cantidad: Mapped[float] = mapped_column(Double, default=0.0)
     costo_unitario: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
     costo_total: Mapped[Optional[float]] = mapped_column(Numeric(12, 2))
